@@ -92,52 +92,54 @@ fun EousAppNavHost() {
         if (isLoggedIn) "dashboard" else if (isTablet) "login" else "intro"
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = startDest,
-        enterTransition = {
-            slideIntoContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(200))
-        },
-        exitTransition = {
-            slideOutOfContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(200))
-        },
-        popEnterTransition = {
-            slideIntoContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(200))
-        },
-        popExitTransition = {
-            slideOutOfContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(200))
-        }
-    ) {
-        composable("intro") {
-            AuthIntroScreen(navController = navController)
-        }
-        composable("login") {
-            LoginFormScreen(navController = navController, isTablet = isTablet)
-        }
-        composable("register") {
-            RegisterFormScreen(navController = navController, isTablet = isTablet)
-        }
-        composable("dashboard") {
-            val user = remember {
-                try {
-                    supabase.auth.currentSessionOrNull()?.user
-                } catch (e: Throwable) {
-                    null
-                }
+    GlowBackground {
+        NavHost(
+            navController = navController,
+            startDestination = startDest,
+            enterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { fullWidth -> fullWidth },
+                    animationSpec = tween(350, easing = FastOutSlowInEasing)
+                )
+            },
+            exitTransition = {
+                slideOutHorizontally(
+                    targetOffsetX = { fullWidth -> -fullWidth },
+                    animationSpec = tween(350, easing = FastOutSlowInEasing)
+                )
+            },
+            popEnterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { fullWidth -> -fullWidth },
+                    animationSpec = tween(350, easing = FastOutSlowInEasing)
+                )
+            },
+            popExitTransition = {
+                slideOutHorizontally(
+                    targetOffsetX = { fullWidth -> fullWidth },
+                    animationSpec = tween(350, easing = FastOutSlowInEasing)
+                )
             }
-            DashboardScreen(navController, user?.id ?: "")
+        ) {
+            composable("intro") {
+                AuthIntroScreen(navController = navController)
+            }
+            composable("login") {
+                LoginFormScreen(navController = navController, isTablet = isTablet)
+            }
+            composable("register") {
+                RegisterFormScreen(navController = navController, isTablet = isTablet)
+            }
+            composable("dashboard") {
+                val user = remember {
+                    try {
+                        supabase.auth.currentSessionOrNull()?.user
+                    } catch (e: Throwable) {
+                        null
+                    }
+                }
+                DashboardScreen(navController, user?.id ?: "")
+            }
         }
     }
 }
@@ -261,7 +263,7 @@ fun AuthIntroScreen(navController: NavController) {
         }
     }
 
-    GlowBackground {
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -895,7 +897,7 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
 
     val buttonScale = remember { Animatable(1f) }
 
-    GlowBackground {
+    Box(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -1279,7 +1281,7 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    GlowBackground {
+    Box(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
