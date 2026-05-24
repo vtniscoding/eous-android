@@ -5,6 +5,8 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -93,10 +95,30 @@ fun EousAppNavHost() {
     NavHost(
         navController = navController,
         startDestination = startDest,
-        enterTransition = { fadeIn(animationSpec = tween(250)) },
-        exitTransition = { fadeOut(animationSpec = tween(250)) },
-        popEnterTransition = { fadeIn(animationSpec = tween(250)) },
-        popExitTransition = { fadeOut(animationSpec = tween(250)) }
+        enterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(200))
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(200))
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(200))
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(200))
+        }
     ) {
         composable("intro") {
             AuthIntroScreen(navController = navController)
@@ -214,6 +236,22 @@ fun AuthIntroScreen(navController: NavController) {
     }
 
     var activeSlide by remember { mutableStateOf(0) }
+
+    val signUpInteractionSource = remember { MutableInteractionSource() }
+    val isSignUpPressed by signUpInteractionSource.collectIsPressedAsState()
+    val isSignUpHovered by signUpInteractionSource.collectIsHoveredAsState()
+    val signUpScale by animateFloatAsState(
+        targetValue = if (isSignUpHovered || isSignUpPressed) 0.95f else 1.0f,
+        label = "signup_scale"
+    )
+
+    val loginInteractionSource = remember { MutableInteractionSource() }
+    val isLoginPressed by loginInteractionSource.collectIsPressedAsState()
+    val isLoginHovered by loginInteractionSource.collectIsHoveredAsState()
+    val loginScale by animateFloatAsState(
+        targetValue = if (isLoginHovered || isLoginPressed) 0.95f else 1.0f,
+        label = "login_scale"
+    )
 
     // Auto-advance slides every 4 seconds
     LaunchedEffect(Unit) {
@@ -339,9 +377,14 @@ fun AuthIntroScreen(navController: NavController) {
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     contentPadding = PaddingValues(),
+                    interactionSource = signUpInteractionSource,
                     modifier = Modifier
                         .fillMaxWidth(0.75f)
                         .height(48.dp)
+                        .graphicsLayer {
+                            scaleX = signUpScale
+                            scaleY = signUpScale
+                        }
                 ) {
                     Box(
                         modifier = Modifier
@@ -363,7 +406,12 @@ fun AuthIntroScreen(navController: NavController) {
 
                 // Log In Flat text button
                 TextButton(
-                    onClick = { navController.navigate("login") }
+                    onClick = { navController.navigate("login") },
+                    interactionSource = loginInteractionSource,
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = loginScale
+                        scaleY = loginScale
+                    }
                 ) {
                     Text(
                         "Log In",
