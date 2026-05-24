@@ -1,5 +1,6 @@
 package com.eous.mentor.features.sidebar.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -35,37 +36,38 @@ import com.eous.mentor.features.userlibrary.presentation.Library
 @Composable
 fun Sidebar(
     navController: NavController,
-    userId: String
+    userId: String,
+    viewModel: SidebarViewModel = remember { SidebarViewModel() }
 ) {
-    var isSidebarOpen by remember { mutableStateOf(false) }
-    var currentScreen by remember { mutableStateOf("dashboard") }
-    var chatInitialQuestion by remember { mutableStateOf("") }
-
-    // Sidebar items lists
-    val recentChats = remember {
-        mutableStateListOf(
-            "how i can draw squre...",
-            "Explain Photosynthesis in ..."
-        )
-    }
-
+    val state by viewModel.state.collectAsState()
     val sidebarWidth = 280.dp
+
+    // System back button handling
+    if (state.isSidebarOpen) {
+        BackHandler {
+            viewModel.setSidebarOpen(false)
+        }
+    } else if (state.currentScreen != "dashboard") {
+        BackHandler {
+            viewModel.navigateTo("dashboard")
+        }
+    }
 
     // Animation States
     val sidebarOffset by animateDpAsState(
-        targetValue = if (isSidebarOpen) 0.dp else -sidebarWidth,
+        targetValue = if (state.isSidebarOpen) 0.dp else -sidebarWidth,
         animationSpec = tween(durationMillis = 300),
         label = "sidebar_offset"
     )
 
     val contentOffset by animateDpAsState(
-        targetValue = if (isSidebarOpen) sidebarWidth else 0.dp,
+        targetValue = if (state.isSidebarOpen) sidebarWidth else 0.dp,
         animationSpec = tween(durationMillis = 300),
         label = "content_offset"
     )
 
     val overlayAlpha by animateFloatAsState(
-        targetValue = if (isSidebarOpen) 0.6f else 0f,
+        targetValue = if (state.isSidebarOpen) 0.6f else 0f,
         animationSpec = tween(durationMillis = 300),
         label = "overlay_alpha"
     )
@@ -81,45 +83,45 @@ fun Sidebar(
                 .fillMaxSize()
                 .offset(x = contentOffset)
         ) {
-            when (currentScreen) {
+            when (state.currentScreen) {
                 "dashboard" -> {
                     Dashboard(
                         navController = navController,
                         userId = userId,
-                        onMenuClick = { isSidebarOpen = true }
+                        onMenuClick = { viewModel.setSidebarOpen(true) }
                     )
                 }
                 "chat" -> {
                     Chat(
                         userId = userId,
-                        onMenuClick = { isSidebarOpen = true },
-                        initialQuestion = chatInitialQuestion
+                        onMenuClick = { viewModel.setSidebarOpen(true) },
+                        initialQuestion = state.chatInitialQuestion
                     )
                 }
                 "tools" -> {
                     Tools(
-                        onMenuClick = { isSidebarOpen = true }
+                        onMenuClick = { viewModel.setSidebarOpen(true) }
                     )
                 }
                 "library" -> {
                     Library(
-                        onMenuClick = { isSidebarOpen = true }
+                        onMenuClick = { viewModel.setSidebarOpen(true) }
                     )
                 }
                 "pro" -> {
                     Pro(
-                        onMenuClick = { isSidebarOpen = true }
+                        onMenuClick = { viewModel.setSidebarOpen(true) }
                     )
                 }
                 "search" -> {
                     Search(
-                        onMenuClick = { isSidebarOpen = true }
+                        onMenuClick = { viewModel.setSidebarOpen(true) }
                     )
                 }
             }
 
             // --- 2. DARK OVERLAY FOR SIDESCRIM ---
-            if (isSidebarOpen) {
+            if (state.isSidebarOpen) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -128,7 +130,7 @@ fun Sidebar(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            isSidebarOpen = false
+                            viewModel.setSidebarOpen(false)
                         }
                 )
             }
@@ -157,27 +159,25 @@ fun Sidebar(
                     // Header title & logo
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             "Eous",
                             color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                         Image(
                             painter = painterResource(id = R.drawable.ic_app_logo),
                             contentDescription = "Logo",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(34.dp)
                         )
                     }
 
                     // + New Chat Button
                     Button(
                         onClick = {
-                            chatInitialQuestion = ""
-                            currentScreen = "chat"
-                            isSidebarOpen = false
+                            viewModel.navigateTo("chat", "")
                         },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = EousIndigo),
@@ -213,7 +213,7 @@ fun Sidebar(
                             fontWeight = FontWeight.Bold
                         )
 
-                        recentChats.forEachIndexed { index, chat ->
+                        state.recentChats.forEachIndexed { index, chat ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -221,9 +221,7 @@ fun Sidebar(
                                     .background(Color(0xFF1F1F23))
                                     .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(10.dp))
                                     .clickable {
-                                        chatInitialQuestion = chat
-                                        currentScreen = "chat"
-                                        isSidebarOpen = false
+                                        viewModel.navigateTo("chat", chat)
                                     }
                                     .padding(horizontal = 12.dp, vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -242,7 +240,7 @@ fun Sidebar(
                                     modifier = Modifier
                                         .size(16.dp)
                                         .clickable {
-                                            recentChats.removeAt(index)
+                                            viewModel.deleteRecentChat(index)
                                         }
                                 )
                             }
@@ -258,8 +256,7 @@ fun Sidebar(
                             .background(Color(0xFF1F1F23))
                             .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(10.dp))
                             .clickable {
-                                currentScreen = "search"
-                                isSidebarOpen = false
+                                viewModel.navigateTo("search")
                             }
                             .padding(horizontal = 12.dp),
                         contentAlignment = Alignment.CenterStart
@@ -312,7 +309,7 @@ fun Sidebar(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             // Dashboard item (Green accent style)
-                            val isDashboardSelected = currentScreen == "dashboard"
+                            val isDashboardSelected = state.currentScreen == "dashboard"
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
@@ -327,8 +324,7 @@ fun Sidebar(
                                         RoundedCornerShape(18.dp)
                                     )
                                     .clickable {
-                                        currentScreen = "dashboard"
-                                        isSidebarOpen = false
+                                        viewModel.navigateTo("dashboard")
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -352,7 +348,7 @@ fun Sidebar(
                             }
 
                             // Quizzes item (Purple accent style)
-                            val isQuizzesSelected = currentScreen == "tools"
+                            val isQuizzesSelected = state.currentScreen == "tools"
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
@@ -367,8 +363,7 @@ fun Sidebar(
                                         RoundedCornerShape(18.dp)
                                     )
                                     .clickable {
-                                        currentScreen = "tools"
-                                        isSidebarOpen = false
+                                        viewModel.navigateTo("tools")
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -442,8 +437,7 @@ fun Sidebar(
 
                             Button(
                                 onClick = {
-                                    currentScreen = "pro"
-                                    isSidebarOpen = false
+                                    viewModel.navigateTo("pro")
                                 },
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = EousPurple),

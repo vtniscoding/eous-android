@@ -1,4 +1,4 @@
-package com.eous.mentor.features.auth.presentation
+package com.eous.mentor.features.auth.presentation.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

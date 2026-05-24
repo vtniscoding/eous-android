@@ -1,22 +1,23 @@
 package com.eous.mentor.features.dashboard.presentation
 
 import android.widget.Toast
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -24,60 +25,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.eous.mentor.core.di.supabase
 import com.eous.mentor.core.theme.*
-import com.eous.mentor.data.model.*
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.time.LocalDate
 
 @Composable
-fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> Unit) {
+fun Dashboard(
+    navController: NavController,
+    userId: String,
+    onMenuClick: () -> Unit,
+    viewModel: DashboardViewModel = remember(userId) { DashboardViewModel(userId) }
+) {
+    val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
-    // Dashboard Statistics State
-    var stats by remember {
-        mutableStateOf(
-            DashboardStats(
-                displayName = "Student",
-                totalQueries = 6,
-                libraryItems = 0,
-                streak = 0,
-                studyTime = "0.9",
-                level = 1,
-                xp = 60,
-                mathPct = 0,
-                itPct = 0,
-                sciencePct = 100,
-                quizzes = emptyList()
-            )
-        )
-    }
-
-    var isLoading by remember { mutableStateOf(true) }
-
-    // Fetch stats on load
-    LaunchedEffect(userId) {
-        if (userId.isNotEmpty()) {
-            withContext(Dispatchers.IO) {
-                try {
-                    val fetched = fetchDashboardStatsFromSupabase(userId)
-                    stats = fetched
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    // If backend is empty or table doesn't exist, we fall back to mockup stats
-                } finally {
-                    isLoading = false
-                }
-            }
-        } else {
-            isLoading = false
-        }
-    }
 
     Box(
         modifier = Modifier
@@ -176,7 +134,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                     }
 
                     // Avatar Icon
-                    val initial = if (stats.displayName.isNotEmpty()) stats.displayName.take(1).uppercase() else "T"
+                    val initial = if (state.stats.displayName.isNotEmpty()) state.stats.displayName.take(1).uppercase() else "T"
                     Box(
                         modifier = Modifier
                             .size(32.dp)
@@ -212,7 +170,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Welcome Back,\n${stats.displayName}! 👋",
+                            text = "Welcome Back,\n${state.stats.displayName}! 👋",
                             color = Color.White,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.ExtraBold,
@@ -264,7 +222,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Level ${stats.level}",
+                                    text = "Level ${state.stats.level}",
                                     color = Color.White,
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.ExtraBold
@@ -279,7 +237,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                                 )
                                 Row(verticalAlignment = Alignment.Bottom) {
                                     Text(
-                                        text = "${stats.xp}",
+                                        text = "${state.stats.xp}",
                                         color = Color.White,
                                         fontSize = 22.sp,
                                         fontWeight = FontWeight.ExtraBold
@@ -303,7 +261,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(fraction = (stats.xp / 100f).coerceIn(0f, 1f))
+                                    .fillMaxWidth(fraction = (state.stats.xp / 100f).coerceIn(0f, 1f))
                                     .fillMaxHeight()
                                     .background(
                                         Brush.horizontalGradient(listOf(EousPurple, EousIndigo)),
@@ -313,7 +271,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                         }
 
                         Text(
-                            text = "🔥 ${100 - stats.xp} XP to reach Level ${stats.level + 1}! Keep asking questions to level up.",
+                            text = "🔥 ${100 - state.stats.xp} XP to reach Level ${state.stats.level + 1}! Keep asking questions to level up.",
                             color = MutedText,
                             fontSize = 12.sp
                         )
@@ -325,7 +283,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                     // Streak Card
                     StatItemCard(
                         title = "Study Streak",
-                        value = "${stats.streak} Days",
+                        value = "${state.stats.streak} Days",
                         icon = Icons.Outlined.Star,
                         iconTint = EousPurple
                     )
@@ -333,7 +291,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                     // Total Queries Card
                     StatItemCard(
                         title = "Total Queries",
-                        value = "${stats.totalQueries}",
+                        value = "${state.stats.totalQueries}",
                         icon = Icons.Outlined.Face,
                         iconTint = EousIndigo
                     )
@@ -341,7 +299,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                     // Library Items Card
                     StatItemCard(
                         title = "Library Items",
-                        value = "${stats.libraryItems}",
+                        value = "${state.stats.libraryItems}",
                         icon = Icons.Outlined.Bookmark,
                         iconTint = EousPink
                     )
@@ -349,7 +307,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                     // Est. Study Time Card
                     StatItemCard(
                         title = "Est. Study Time",
-                        value = "${stats.studyTime} hrs",
+                        value = "${state.stats.studyTime} hrs",
                         icon = Icons.Outlined.AccessTime,
                         iconTint = EousBlue
                     )
@@ -383,21 +341,21 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                         // Math Progress
                         SubjectFocusProgress(
                             subjectName = "Math",
-                            pct = stats.mathPct,
+                            pct = state.stats.mathPct,
                             trackColor = EousPurple
                         )
 
                         // IT / Programming Progress
                         SubjectFocusProgress(
                             subjectName = "IT / Programming",
-                            pct = stats.itPct,
+                            pct = state.stats.itPct,
                             trackColor = EousIndigo
                         )
 
                         // Science Progress
                         SubjectFocusProgress(
                             subjectName = "Science",
-                            pct = stats.sciencePct,
+                            pct = state.stats.sciencePct,
                             trackColor = EousPink
                         )
                     }
@@ -434,33 +392,33 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                         ) {
                             // Badge 1: Streak
                             BadgeItem(
-                                emoji = if (stats.streak >= 5) "🏅" else "🔥",
+                                emoji = if (state.stats.streak >= 5) "🏅" else "🔥",
                                 label = "Streak",
-                                active = stats.streak >= 5,
+                                active = state.stats.streak >= 5,
                                 ringColor = EousOrange
                             )
 
                             // Badge 2: Library
                             BadgeItem(
-                                emoji = if (stats.libraryItems >= 5) "🎖️" else "📁",
+                                emoji = if (state.stats.libraryItems >= 5) "🎖️" else "📁",
                                 label = "Library",
-                                active = stats.libraryItems >= 5,
+                                active = state.stats.libraryItems >= 5,
                                 ringColor = EousGreen
                             )
 
                             // Badge 3: Total Queries
                             BadgeItem(
-                                emoji = if (stats.totalQueries >= 50) "🥇" else "🎯",
+                                emoji = if (state.stats.totalQueries >= 50) "🥇" else "🎯",
                                 label = "Questions",
-                                active = stats.totalQueries >= 50,
+                                active = state.stats.totalQueries >= 50,
                                 ringColor = EousBlue
                             )
 
                             // Badge 4: Quiz Master
                             BadgeItem(
-                                emoji = if (stats.quizzes.size >= 5) "🏆" else "🎓",
+                                emoji = if (state.stats.quizzes.size >= 5) "🏆" else "🎓",
                                 label = "Quiz Master",
-                                active = stats.quizzes.size >= 5,
+                                active = state.stats.quizzes.size >= 5,
                                 ringColor = EousPurple
                             )
                         }
@@ -492,7 +450,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                             )
                         }
 
-                        if (stats.quizzes.isEmpty()) {
+                        if (state.stats.quizzes.isEmpty()) {
                             // Mock item from design screenshot
                             RecentQuizItem(
                                 topic = "Square",
@@ -501,7 +459,7 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                                 total = 3
                             )
                         } else {
-                            stats.quizzes.take(5).forEach { quiz ->
+                            state.stats.quizzes.take(5).forEach { quiz ->
                                 RecentQuizItem(
                                     topic = quiz.topic,
                                     date = quiz.created_at.take(10),
@@ -516,17 +474,17 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
                 // Sign Out Button
                 Button(
                     onClick = {
-                        scope.launch {
-                            try {
-                                supabase.auth.signOut()
+                        viewModel.logout(
+                            onSuccess = {
                                 Toast.makeText(context, "Logged out successfully!", Toast.LENGTH_SHORT).show()
                                 navController.navigate("login") {
                                     popUpTo(0) { inclusive = true }
                                 }
-                            } catch (e: Exception) {
+                            },
+                            onError = {
                                 Toast.makeText(context, "Error logging out", Toast.LENGTH_SHORT).show()
                             }
-                        }
+                        )
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = EousRed.copy(alpha = 0.1f)),
@@ -542,277 +500,4 @@ fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> U
             }
         }
     }
-}
-
-@Composable
-fun StatItemCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, iconTint: Color) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(CardBackground.copy(alpha = 0.5f))
-            .border(1.dp, BorderColor.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(15.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(iconTint.copy(alpha = 0.1f), RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = iconTint,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            Column {
-                Text(
-                    text = title,
-                    color = MutedText,
-                    fontSize = 13.sp
-                )
-                Text(
-                    text = value,
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun SubjectFocusProgress(subjectName: String, pct: Int, trackColor: Color) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = subjectName,
-                color = Color.White,
-                fontSize = 14.sp
-            )
-            Text(
-                text = "$pct%",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraction = (pct / 100f).coerceIn(0f, 1f))
-                    .fillMaxHeight()
-                    .background(trackColor, RoundedCornerShape(4.dp))
-            )
-        }
-    }
-}
-
-@Composable
-fun BadgeItem(emoji: String, label: String, active: Boolean, ringColor: Color) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .border(
-                    2.dp,
-                    if (active) ringColor else Color.Gray.copy(alpha = 0.3f),
-                    CircleShape
-                )
-                .padding(4.dp)
-                .background(
-                    if (active) ringColor.copy(alpha = 0.1f) else Color.Transparent,
-                    CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(emoji, fontSize = 20.sp)
-        }
-        Text(
-            text = label,
-            color = MutedText,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun RecentQuizItem(topic: String, date: String, score: Int, total: Int) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.Black.copy(alpha = 0.3f))
-            .border(1.dp, BorderColor.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-            .padding(14.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = topic,
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = date,
-                    color = MutedText,
-                    fontSize = 11.sp
-                )
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = "$score/$total",
-                    color = EousPurple,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Box(
-                    modifier = Modifier
-                        .width(70.dp)
-                        .height(6.dp)
-                        .background(Color.Gray.copy(alpha = 0.2f), RoundedCornerShape(3.dp))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(fraction = if (total > 0) score.toFloat() / total else 0f)
-                            .fillMaxHeight()
-                            .background(
-                                Brush.horizontalGradient(listOf(EousPurple, EousIndigo)),
-                                RoundedCornerShape(3.dp)
-                            )
-                    )
-                }
-            }
-        }
-    }
-}
-
-suspend fun fetchDashboardStatsFromSupabase(userId: String): DashboardStats {
-    // 1. Fetch profile name
-    val profile = try {
-        supabase.from("profiles")
-            .select {
-                filter {
-                    eq("id", userId)
-                }
-            }
-            .decodeSingleOrNull<Profile>()
-    } catch (e: Exception) {
-        null
-    }
-
-    // 2. Fetch queries count and subject focus
-    val messages = try {
-        supabase.from("messages")
-            .select {
-                filter {
-                    eq("role", "user")
-                }
-            }
-            .decodeList<Message>()
-    } catch (e: Exception) {
-        emptyList()
-    }
-
-    // 3. Fetch bookmarks count
-    val bookmarks = try {
-        supabase.from("bookmarks")
-            .select()
-            .decodeList<Bookmark>()
-    } catch (e: Exception) {
-        emptyList()
-    }
-
-    // 4. Fetch recent quizzes
-    val quizzes = try {
-        supabase.from("quizzes")
-            .select()
-            .decodeList<Quiz>()
-    } catch (e: Exception) {
-        emptyList()
-    }
-
-    // Process stats
-    val totalQueries = messages.size
-    val libraryItems = bookmarks.size
-
-    // Calculate subject focus
-    var mathCount = 0
-    var itCount = 0
-    var scienceCount = 0
-    messages.forEach { msg ->
-        val sub = msg.subject?.lowercase()
-        if (sub == "math") mathCount++
-        else if (sub == "it" || sub == "programming") itCount++
-        else if (sub == "science" || sub == "chemistry" || sub == "biology" || sub == "physics") scienceCount++
-    }
-
-    // Calculate streak from unique message dates
-    val uniqueDates = messages.mapNotNull { msg ->
-        msg.created_at?.take(10) // Format: YYYY-MM-DD
-    }.distinct()
-
-    var streak = 0
-    val today = LocalDate.now().toString()
-    val yesterday = LocalDate.now().minusDays(1).toString()
-
-    if (uniqueDates.contains(today) || uniqueDates.contains(yesterday)) {
-        var checkDate = if (uniqueDates.contains(today)) LocalDate.now() else LocalDate.now().minusDays(1)
-        while (uniqueDates.contains(checkDate.toString())) {
-            streak++
-            checkDate = checkDate.minusDays(1)
-        }
-    }
-
-    val totalXp = totalQueries * 10 + libraryItems * 20
-    val level = (totalXp / 100) + 1
-    val xp = totalXp % 100
-
-    val totalSubjects = mathCount + itCount + scienceCount
-    val displayEmail = profile?.email ?: "Student"
-    val displayName = profile?.display_name ?: displayEmail.substringBefore("@")
-
-    return DashboardStats(
-        displayName = displayName,
-        totalQueries = totalQueries,
-        libraryItems = libraryItems,
-        streak = streak,
-        studyTime = String.format(java.util.Locale.US, "%.1f", totalQueries * 0.15),
-        level = level,
-        xp = xp,
-        mathPct = if (totalSubjects > 0) Math.round((mathCount.toFloat() / totalSubjects) * 100) else 0,
-        itPct = if (totalSubjects > 0) Math.round((itCount.toFloat() / totalSubjects) * 100) else 0,
-        sciencePct = if (totalSubjects > 0) Math.round((scienceCount.toFloat() / totalSubjects) * 100) else 100,
-        quizzes = quizzes
-    )
 }

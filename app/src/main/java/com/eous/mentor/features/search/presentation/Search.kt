@@ -23,9 +23,10 @@ import com.eous.mentor.core.theme.*
 
 @Composable
 fun Search(
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    viewModel: SearchViewModel = remember { SearchViewModel() }
 ) {
-    var searchQuery by remember { mutableStateOf("") }
+    val state by viewModel.state.collectAsState()
 
     Box(
         modifier = Modifier
@@ -103,8 +104,8 @@ fun Search(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChanged(it) },
                     placeholder = { Text("Search chats, library, quizzes...", color = MutedText.copy(alpha = 0.5f), fontSize = 14.sp) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -138,11 +139,19 @@ fun Search(
                     fontWeight = FontWeight.Bold
                 )
 
-                Text(
-                    text = "No recent searches found.",
-                    color = MutedText,
-                    fontSize = 13.sp
-                )
+                if (state.recentSearches.isEmpty()) {
+                    Text(
+                        text = "No recent searches found.",
+                        color = MutedText,
+                        fontSize = 13.sp
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        state.recentSearches.forEach { search ->
+                            Text(text = search, color = Color.White, fontSize = 13.sp)
+                        }
+                    }
+                }
             }
         }
     }

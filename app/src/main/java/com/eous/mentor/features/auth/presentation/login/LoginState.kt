@@ -1,4 +1,4 @@
-package com.eous.mentor.features.auth.presentation
+package com.eous.mentor.features.auth.presentation.login
 
 data class LoginState(
     val email: String = "",

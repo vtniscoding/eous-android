@@ -10,20 +10,28 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eous.mentor.core.theme.*
 
 @Composable
 fun Library(
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    viewModel: LibraryViewModel = remember { LibraryViewModel() }
 ) {
+    val state by viewModel.state.collectAsState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -102,30 +110,56 @@ fun Library(
             ) {
                 Spacer(modifier = Modifier.height(40.dp))
                 
-                Text(
-                    text = "📂 Your Library is Empty",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                if (state.isEmpty) {
+                    Text(
+                        text = "📂 Your Library is Empty",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                Text(
-                    text = "Save message threads, textbook solutions, bookmarks, and quiz results to access them offline anytime.",
-                    color = MutedText,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp,
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
+                    Text(
+                        text = "Save message threads, textbook solutions, bookmarks, and quiz results to access them offline anytime.",
+                        color = MutedText,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        textAlign = TextAlign.Center
+                    )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                Button(
-                    onClick = {},
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = EousPurple)
-                ) {
-                    Text("Create New Folder", color = Color.White, fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = { viewModel.createFolder("New Folder") },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = EousPurple)
+                    ) {
+                        Text("Create New Folder", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Text(
+                        text = "Folders",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        state.folders.forEach { folder ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(CardBackground)
+                                    .padding(16.dp)
+                            ) {
+                                Text(text = "📁 $folder", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             }
         }

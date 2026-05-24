@@ -1,4 +1,4 @@
-package com.eous.mentor.features.auth.presentation
+package com.eous.mentor.features.auth.presentation.register
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -36,10 +36,10 @@ import com.eous.mentor.R
 import com.eous.mentor.core.theme.*
 
 @Composable
-fun LoginFormScreen(
+fun RegisterFormScreen(
     navController: NavController,
     isTablet: Boolean,
-    viewModel: LoginViewModel = remember { LoginViewModel() }
+    viewModel: RegisterViewModel = remember { RegisterViewModel() }
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -56,7 +56,7 @@ fun LoginFormScreen(
         ) {
             // Large Screen Left Intro Banner
             if (isTablet) {
-                LargeScreenIntroBanner(modifier = Modifier.weight(1f))
+                LargeScreenRegisterIntroBanner(modifier = Modifier.weight(1f))
             }
 
             // Right/Center Form Card
@@ -108,7 +108,7 @@ fun LoginFormScreen(
                         }
 
                         Text(
-                            text = "Welcome Back",
+                            text = "Create an Account",
                             color = Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
@@ -116,13 +116,13 @@ fun LoginFormScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Log in to your Eous account",
+                            text = "Start your journey with Eous AI Study Mentor",
                             color = MutedText,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             textAlign = TextAlign.Center
                         )
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
 
                         // Error message banner
                         if (state.error != null) {
@@ -132,7 +132,7 @@ fun LoginFormScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(EousRed.copy(alpha = 0.1f))
                                     .border(1.dp, EousRed.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                                    .padding(12.dp)
+                                    .padding(10.dp)
                             ) {
                                 Text(
                                     text = state.error!!,
@@ -143,7 +143,7 @@ fun LoginFormScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
                         }
 
                         // Email Label
@@ -179,25 +179,20 @@ fun LoginFormScreen(
                             )
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // Password Title + Forgot link row
+                        // Password Label
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            horizontalArrangement = Arrangement.Start
                         ) {
-                            Text("Password", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                             Text(
-                                "Forgot password?",
-                                color = EousPurple,
-                                fontSize = 12.sp,
-                                modifier = Modifier.clickable {
-                                    Toast.makeText(context, "Password reset link sent!", Toast.LENGTH_SHORT).show()
-                                }
+                                text = "Password",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
-
                         Spacer(modifier = Modifier.height(6.dp))
 
                         // Password Input
@@ -210,6 +205,53 @@ fun LoginFormScreen(
                                 IconButton(onClick = { viewModel.onTogglePasswordVisibility() }) {
                                     Icon(
                                         imageVector = if (state.isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        contentDescription = "Toggle password visibility",
+                                        tint = MutedText
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color.Black.copy(alpha = 0.5f),
+                                unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
+                                focusedBorderColor = EousPurple,
+                                unfocusedBorderColor = BorderColor
+                            )
+                        )
+
+                        // Password Strength Meter (Always Visible)
+                        PasswordStrengthMeter(password = state.password)
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Confirm Password Label
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Text(
+                                text = "Confirm Password",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Confirm Password Input
+                        OutlinedTextField(
+                            value = state.confirmPassword,
+                            onValueChange = { viewModel.onConfirmPasswordChanged(it) },
+                            singleLine = true,
+                            visualTransformation = if (state.isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { viewModel.onToggleConfirmPasswordVisibility() }) {
+                                    Icon(
+                                        imageVector = if (state.isConfirmPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                         contentDescription = "Toggle password visibility",
                                         tint = MutedText
                                     )
@@ -230,11 +272,10 @@ fun LoginFormScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // Log In Button
                         Button(
                             onClick = {
-                                viewModel.onLogin {
-                                    Toast.makeText(context, "Logged in successfully!", Toast.LENGTH_SHORT).show()
+                                viewModel.onRegister {
+                                    Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
                                     navController.navigate("dashboard") {
                                         popUpTo("intro") { inclusive = true }
                                     }
@@ -264,7 +305,7 @@ fun LoginFormScreen(
                                     )
                                 } else {
                                     Text(
-                                        "Log In",
+                                        "Sign Up",
                                         color = Color.White,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
@@ -275,19 +316,19 @@ fun LoginFormScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Switch to Sign Up
+                        // Switch to Login
                         Row(
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Don't have an account? ", color = MutedText, fontSize = 13.sp)
+                            Text("Already have an account? ", color = MutedText, fontSize = 13.sp)
                             Text(
-                                "Sign up",
+                                "Log in",
                                 color = EousPurple,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.clickable {
-                                    navController.navigate("register") {
+                                    navController.navigate("login") {
                                         popUpTo("intro")
                                     }
                                 }

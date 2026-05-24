@@ -1,4 +1,4 @@
-package com.eous.mentor.features.auth.presentation
+package com.eous.mentor.features.auth.presentation.intro
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -31,32 +31,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.eous.mentor.R
 import com.eous.mentor.core.theme.*
-import com.eous.mentor.features.auth.domain.Slide
-import kotlinx.coroutines.delay
 
 @Composable
-fun AuthIntroScreen(navController: NavController) {
-    val slides = remember {
-        listOf(
-            Slide(
-                "Your Personal AI Mentor",
-                "Works 24/7 with customized, step-by-step explanations tailored just for you.",
-                Brush.horizontalGradient(listOf(EousPurple, EousIndigo))
-            ),
-            Slide(
-                "Tailored to Your Level",
-                "Whether you are in Middle School, High School, or University, Eous adapts to you.",
-                Brush.horizontalGradient(listOf(EousBlue, EousIndigo))
-            ),
-            Slide(
-                "Active Recall Quizzes",
-                "Test your skills with interactive flashcards and gamified subject tracking.",
-                Brush.horizontalGradient(listOf(EousPink, EousRed))
-            )
-        )
-    }
-
-    var activeSlide by remember { mutableStateOf(0) }
+fun AuthIntroScreen(
+    navController: NavController,
+    viewModel: IntroViewModel = remember { IntroViewModel() }
+) {
+    val state by viewModel.state.collectAsState()
 
     val signUpInteractionSource = remember { MutableInteractionSource() }
     val isSignUpPressed by signUpInteractionSource.collectIsPressedAsState()
@@ -73,14 +54,6 @@ fun AuthIntroScreen(navController: NavController) {
         targetValue = if (isLoginHovered || isLoginPressed) 0.95f else 1.0f,
         label = "login_scale"
     )
-
-    // Auto-advance slides every 4 seconds
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(4000)
-            activeSlide = (activeSlide + 1) % slides.size
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -99,7 +72,7 @@ fun AuthIntroScreen(navController: NavController) {
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                PhoneFrameShowcase(activeSlide = activeSlide)
+                PhoneFrameShowcase(activeSlide = state.activeSlideIndex)
             }
 
             // 2. Slide Dots Indicator
@@ -107,14 +80,14 @@ fun AuthIntroScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.padding(vertical = 12.dp)
             ) {
-                slides.forEachIndexed { index, _ ->
+                state.slides.forEachIndexed { index, _ ->
                     val width by animateDpAsState(
-                        targetValue = if (activeSlide == index) 20.dp else 6.dp,
+                        targetValue = if (state.activeSlideIndex == index) 20.dp else 6.dp,
                         animationSpec = tween(300),
                         label = "dot_width"
                     )
                     val color by animateColorAsState(
-                        targetValue = if (activeSlide == index) EousPurple else Color.White.copy(alpha = 0.2f),
+                        targetValue = if (state.activeSlideIndex == index) EousPurple else Color.White.copy(alpha = 0.2f),
                         animationSpec = tween(300),
                         label = "dot_color"
                     )
@@ -156,32 +129,34 @@ fun AuthIntroScreen(navController: NavController) {
                 }
 
                 // Dynamic Caption
-                Crossfade(
-                    targetState = slides[activeSlide],
-                    animationSpec = tween(300),
-                    label = "slide_caption",
-                    modifier = Modifier.height(75.dp)
-                ) { slide ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = slide.title,
-                            color = Color.White,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = slide.description,
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
+                if (state.slides.isNotEmpty()) {
+                    Crossfade(
+                        targetState = state.slides[state.activeSlideIndex],
+                        animationSpec = tween(300),
+                        label = "slide_caption",
+                        modifier = Modifier.height(75.dp)
+                    ) { slide ->
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = slide.title,
+                                color = Color.White,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = slide.description,
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
                     }
                 }
             }

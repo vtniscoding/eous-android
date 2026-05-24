@@ -1,9 +1,7 @@
 package com.eous.mentor.features.chat.presentation
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,29 +21,20 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.eous.mentor.core.theme.*
-import com.eous.mentor.data.model.Message
 
 @Composable
 fun Chat(
     userId: String,
     onMenuClick: () -> Unit,
-    initialQuestion: String = ""
+    initialQuestion: String = "",
+    viewModel: ChatViewModel = remember(initialQuestion) { ChatViewModel(initialQuestion) }
 ) {
-    val context = LocalContext.current
-    var inputText by remember { mutableStateOf(initialQuestion) }
-    val messages = remember {
-        mutableStateListOf<Message>(
-            Message(role = "assistant", content = "Hello! I am Eous, your AI Study Mentor. How can I help you master your subjects today? 🚀")
-        )
-    }
-    var isSending by remember { mutableStateOf(false) }
+    val state by viewModel.state.collectAsState()
 
     Box(
         modifier = Modifier
@@ -128,7 +117,7 @@ fun Chat(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                items(messages) { msg ->
+                items(state.messages) { msg ->
                     val isUser = msg.role == "user"
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -198,34 +187,14 @@ fun Chat(
                     .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
                 OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
+                    value = state.inputText,
+                    onValueChange = { viewModel.onInputTextChanged(it) },
                     placeholder = { Text("Ask your mentor anything...", color = MutedText.copy(alpha = 0.5f), fontSize = 14.sp) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                     trailingIcon = {
                         IconButton(
-                            onClick = {
-                                if (inputText.trim().isNotEmpty()) {
-                                    val userMsg = Message(role = "user", content = inputText)
-                                    messages.add(userMsg)
-                                    val queryText = inputText
-                                    inputText = ""
-                                    isSending = true
-                                    
-                                    // Simulated simple mock reply
-                                    messages.add(Message(role = "assistant", content = "Thinking... 🤖"))
-                                    val replyIndex = messages.lastIndex
-                                    
-                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                        messages[replyIndex] = Message(
-                                            role = "assistant",
-                                            content = "I've analyzed your question: '$queryText'. Let's break this down into simple, easy-to-understand concepts!"
-                                        )
-                                        isSending = false
-                                    }, 1500)
-                                }
-                            },
+                            onClick = { viewModel.sendMessage() },
                             modifier = Modifier
                                 .size(28.dp)
                                 .background(EousPurple, CircleShape)

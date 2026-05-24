@@ -10,10 +10,12 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -23,8 +25,11 @@ import com.eous.mentor.core.theme.*
 
 @Composable
 fun Tools(
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    viewModel: ToolsViewModel = remember { ToolsViewModel() }
 ) {
+    val state by viewModel.state.collectAsState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -117,65 +122,41 @@ fun Tools(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Quiz Tool Card
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBackground.copy(alpha = 0.5f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, BorderColor.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                state.tools.forEach { tool ->
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBackground.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, BorderColor.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
                     ) {
-                        Text(
-                            text = "🧠 Smart Quizzes",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Generate custom quizzes based on your recent chats. Track scores, review mistakes, and earn experience points.",
-                            color = MutedText,
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = {},
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = EousPurple)
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Start Quiz", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = tool.title,
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = tool.description,
+                                color = MutedText,
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp
+                            )
+                            if (tool.buttonText != null) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = {},
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = EousPurple)
+                                ) {
+                                    Text(tool.buttonText, color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
-                    }
-                }
-
-                // Flashcard Tool Card
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBackground.copy(alpha = 0.5f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, BorderColor.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "⚡ Active Recall Flashcards",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Automate flashcard sets from textbook screenshots or session notes. Review using spaced repetition.",
-                            color = MutedText,
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp
-                        )
                     }
                 }
             }

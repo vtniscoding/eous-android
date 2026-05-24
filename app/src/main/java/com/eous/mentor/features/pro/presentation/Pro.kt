@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -23,8 +25,11 @@ import com.eous.mentor.core.theme.*
 
 @Composable
 fun Pro(
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    viewModel: ProViewModel = remember { ProViewModel() }
 ) {
+    val state by viewModel.state.collectAsState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -133,10 +138,9 @@ fun Pro(
 
                 // Premium Features checklist
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FeatureCheckRow("Unlimited AI Tutor Chats (24/7 access)")
-                    FeatureCheckRow("Custom interactive smart quizzes")
-                    FeatureCheckRow("Textbook scan and solution guide helper")
-                    FeatureCheckRow("Detailed diagnostic learning analytics")
+                    state.features.forEach { feature ->
+                        FeatureCheckRow(feature)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -156,11 +160,11 @@ fun Pro(
                             .background(
                                 Brush.horizontalGradient(listOf(EousPurple, EousIndigo)),
                                 RoundedCornerShape(12.dp)
-                            ),
+                              ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "Upgrade Now — $9.99/mo",
+                            "Upgrade Now — ${state.price}",
                             color = Color.White,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
@@ -169,29 +173,5 @@ fun Pro(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun FeatureCheckRow(text: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(18.dp)
-                .background(EousGreen.copy(alpha = 0.15f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = EousGreen,
-                modifier = Modifier.size(12.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(text = text, color = Color.White, fontSize = 14.sp)
     }
 }

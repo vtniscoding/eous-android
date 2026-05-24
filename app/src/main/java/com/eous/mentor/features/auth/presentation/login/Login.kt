@@ -1,4 +1,4 @@
-package com.eous.mentor.features.auth.presentation
+package com.eous.mentor.features.auth.presentation.login
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -36,10 +36,10 @@ import com.eous.mentor.R
 import com.eous.mentor.core.theme.*
 
 @Composable
-fun RegisterFormScreen(
+fun LoginFormScreen(
     navController: NavController,
     isTablet: Boolean,
-    viewModel: RegisterViewModel = remember { RegisterViewModel() }
+    viewModel: LoginViewModel = remember { LoginViewModel() }
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -56,7 +56,7 @@ fun RegisterFormScreen(
         ) {
             // Large Screen Left Intro Banner
             if (isTablet) {
-                LargeScreenRegisterIntroBanner(modifier = Modifier.weight(1f))
+                LargeScreenIntroBanner(modifier = Modifier.weight(1f))
             }
 
             // Right/Center Form Card
@@ -108,7 +108,7 @@ fun RegisterFormScreen(
                         }
 
                         Text(
-                            text = "Create an Account",
+                            text = "Welcome Back",
                             color = Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
@@ -116,13 +116,13 @@ fun RegisterFormScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Start your journey with Eous AI Study Mentor",
+                            text = "Log in to your Eous account",
                             color = MutedText,
-                            fontSize = 13.sp,
+                            fontSize = 14.sp,
                             textAlign = TextAlign.Center
                         )
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
                         // Error message banner
                         if (state.error != null) {
@@ -132,7 +132,7 @@ fun RegisterFormScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(EousRed.copy(alpha = 0.1f))
                                     .border(1.dp, EousRed.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                                    .padding(10.dp)
+                                    .padding(12.dp)
                             ) {
                                 Text(
                                     text = state.error!!,
@@ -143,7 +143,7 @@ fun RegisterFormScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
 
                         // Email Label
@@ -179,20 +179,25 @@ fun RegisterFormScreen(
                             )
                         )
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        // Password Label
+                        // Password Title + Forgot link row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Text("Password", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                             Text(
-                                text = "Password",
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
+                                "Forgot password?",
+                                color = EousPurple,
+                                fontSize = 12.sp,
+                                modifier = Modifier.clickable {
+                                    Toast.makeText(context, "Password reset link sent!", Toast.LENGTH_SHORT).show()
+                                }
                             )
                         }
+
                         Spacer(modifier = Modifier.height(6.dp))
 
                         // Password Input
@@ -205,53 +210,6 @@ fun RegisterFormScreen(
                                 IconButton(onClick = { viewModel.onTogglePasswordVisibility() }) {
                                     Icon(
                                         imageVector = if (state.isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                        contentDescription = "Toggle password visibility",
-                                        tint = MutedText
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedContainerColor = Color.Black.copy(alpha = 0.5f),
-                                unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
-                                focusedBorderColor = EousPurple,
-                                unfocusedBorderColor = BorderColor
-                            )
-                        )
-
-                        // Password Strength Meter (Always Visible)
-                        PasswordStrengthMeter(password = state.password)
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Confirm Password Label
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            Text(
-                                text = "Confirm Password",
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        // Confirm Password Input
-                        OutlinedTextField(
-                            value = state.confirmPassword,
-                            onValueChange = { viewModel.onConfirmPasswordChanged(it) },
-                            singleLine = true,
-                            visualTransformation = if (state.isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { viewModel.onToggleConfirmPasswordVisibility() }) {
-                                    Icon(
-                                        imageVector = if (state.isConfirmPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                         contentDescription = "Toggle password visibility",
                                         tint = MutedText
                                     )
@@ -272,10 +230,11 @@ fun RegisterFormScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
+                        // Log In Button
                         Button(
                             onClick = {
-                                viewModel.onRegister {
-                                    Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
+                                viewModel.onLogin {
+                                    Toast.makeText(context, "Logged in successfully!", Toast.LENGTH_SHORT).show()
                                     navController.navigate("dashboard") {
                                         popUpTo("intro") { inclusive = true }
                                     }
@@ -305,7 +264,7 @@ fun RegisterFormScreen(
                                     )
                                 } else {
                                     Text(
-                                        "Sign Up",
+                                        "Log In",
                                         color = Color.White,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
@@ -316,19 +275,19 @@ fun RegisterFormScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Switch to Login
+                        // Switch to Sign Up
                         Row(
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Already have an account? ", color = MutedText, fontSize = 13.sp)
+                            Text("Don't have an account? ", color = MutedText, fontSize = 13.sp)
                             Text(
-                                "Log in",
+                                "Sign up",
                                 color = EousPurple,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.clickable {
-                                    navController.navigate("login") {
+                                    navController.navigate("register") {
                                         popUpTo("intro")
                                     }
                                 }

@@ -1,4 +1,4 @@
-package com.eous.mentor.features.auth.presentation
+package com.eous.mentor.features.auth.presentation.intro
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.EaseOutQuad

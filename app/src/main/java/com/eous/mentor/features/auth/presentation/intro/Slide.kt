@@ -1,4 +1,4 @@
-package com.eous.mentor.features.auth.domain
+package com.eous.mentor.features.auth.presentation.intro
 
 import androidx.compose.ui.graphics.Brush
 

@@ -1,4 +1,6 @@
-package com.eous.mentor.features.auth.presentation
+package com.eous.mentor.features.auth.presentation.register
+
+import com.eous.mentor.features.auth.presentation.FloatingMascot
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

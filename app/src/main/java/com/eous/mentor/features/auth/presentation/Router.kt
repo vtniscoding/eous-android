@@ -19,10 +19,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.eous.mentor.R
+import com.eous.mentor.core.theme.*
 import com.eous.mentor.core.di.supabase
 import com.eous.mentor.features.sidebar.presentation.Sidebar
+import com.eous.mentor.features.auth.presentation.login.LoginFormScreen
+import com.eous.mentor.features.auth.presentation.register.RegisterFormScreen
+import com.eous.mentor.features.auth.presentation.intro.AuthIntroScreen
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.auth
-
+import androidx.compose.material3.CircularProgressIndicator
 
 // --- Navigation Host ---
 @Composable
@@ -32,17 +37,28 @@ fun AuthRouter() {
     val screenWidth = configuration.screenWidthDp
     val isTablet = screenWidth >= 600
 
-    val isLoggedIn = remember {
-        try {
-            supabase.auth.currentSessionOrNull() != null
-        } catch (e: Throwable) {
-            false
+    var isInitialized by remember { mutableStateOf(false) }
+    var startDest by remember { mutableStateOf("intro") }
+
+    LaunchedEffect(Unit) {
+        supabase.auth.sessionStatus.collect { status ->
+            if (status !is SessionStatus.Initializing) {
+                startDest = if (status is SessionStatus.Authenticated) "dashboard" else if (isTablet) "login" else "intro"
+                isInitialized = true
+            }
         }
     }
 
-    val startDest = remember {
-        if (isLoggedIn) "dashboard" else if (isTablet) "login" else "intro"
-    }
+    if (!isInitialized) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF0A0A14)),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = EousPurple)
+        }
+    } else {
 
     GlowBackground {
         NavHost(
@@ -93,6 +109,7 @@ fun AuthRouter() {
                 Sidebar(navController, user?.id ?: "")
             }
         }
+    }
     }
 }
 
