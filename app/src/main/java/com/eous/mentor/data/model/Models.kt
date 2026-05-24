@@ -32,6 +32,7 @@ data class Profile(
 data class Message(
     val id: String? = null,
     val role: String,
+    val content: String = "",
     val subject: String? = null,
     val created_at: String? = null
 )

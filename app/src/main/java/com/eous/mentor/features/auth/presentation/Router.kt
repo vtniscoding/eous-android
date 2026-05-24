@@ -20,7 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.eous.mentor.R
 import com.eous.mentor.core.di.supabase
-import com.eous.mentor.features.dashboard.presentation.DashboardScreen
+import com.eous.mentor.features.sidebar.presentation.Sidebar
 import io.github.jan.supabase.auth.auth
 
 
@@ -90,7 +90,7 @@ fun AuthRouter() {
                         null
                     }
                 }
-                DashboardScreen(navController, user?.id ?: "")
+                Sidebar(navController, user?.id ?: "")
             }
         }
     }

@@ -35,7 +35,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 @Composable
-fun DashboardScreen(navController: NavController, userId: String) {
+fun Dashboard(navController: NavController, userId: String, onMenuClick: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -136,12 +136,16 @@ fun DashboardScreen(navController: NavController, userId: String) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Menu Icon",
-                        tint = Color.White,
+                    IconButton(
+                        onClick = onMenuClick,
                         modifier = Modifier.size(24.dp)
-                    )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Menu Icon",
+                            tint = Color.White
+                        )
+                    }
                     Text(
                         text = "Dashboard",
                         color = Color.White,
