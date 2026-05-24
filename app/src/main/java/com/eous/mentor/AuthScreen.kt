@@ -15,7 +15,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -36,7 +35,33 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.eous.mentor.ui.theme.*
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+// --- Friendly Auth Error Parser ---
+private fun friendlyAuthError(e: Throwable): String {
+    val msg = (e.localizedMessage ?: e.message ?: "").lowercase()
+    return when {
+        "invalid_credentials" in msg || "invalid login" in msg ->
+            "Incorrect email or password. Please try again."
+        "email not confirmed" in msg ->
+            "Please verify your email before logging in."
+        "user already registered" in msg || "already been registered" in msg ->
+            "An account with this email already exists."
+        "rate limit" in msg || "too many requests" in msg ->
+            "Too many attempts. Please wait a moment and try again."
+        "network" in msg || "unable to resolve" in msg || "timeout" in msg ->
+            "Network error. Please check your connection."
+        "weak password" in msg ->
+            "Password is too weak. Use at least 8 characters with mixed case and digits."
+        "invalid email" in msg ->
+            "Please enter a valid email address."
+        else ->
+            "Something went wrong. Please try again later."
+    }
+}
 
 // --- Slide Data Model ---
 data class Slide(
@@ -53,9 +78,25 @@ fun EousAppNavHost() {
     val screenWidth = configuration.screenWidthDp
     val isTablet = screenWidth >= 600
 
+    val isLoggedIn = remember {
+        try {
+            supabase.auth.currentSessionOrNull() != null
+        } catch (e: Throwable) {
+            false
+        }
+    }
+
+    val startDest = remember {
+        if (isLoggedIn) "dashboard" else if (isTablet) "login" else "intro"
+    }
+
     NavHost(
         navController = navController,
-        startDestination = if (isTablet) "login" else "intro"
+        startDestination = startDest,
+        enterTransition = { fadeIn(animationSpec = tween(250)) },
+        exitTransition = { fadeOut(animationSpec = tween(250)) },
+        popEnterTransition = { fadeIn(animationSpec = tween(250)) },
+        popExitTransition = { fadeOut(animationSpec = tween(250)) }
     ) {
         composable("intro") {
             AuthIntroScreen(navController = navController)
@@ -66,6 +107,16 @@ fun EousAppNavHost() {
         composable("register") {
             RegisterFormScreen(navController = navController, isTablet = isTablet)
         }
+        composable("dashboard") {
+            val user = remember {
+                try {
+                    supabase.auth.currentSessionOrNull()?.user
+                } catch (e: Throwable) {
+                    null
+                }
+            }
+            DashboardScreen(navController, user?.id ?: "")
+        }
     }
 }
 
@@ -75,41 +126,36 @@ fun GlowBackground(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Color(0xFF0A0A14))
+            .drawBehind {
+                // Top-left purple glow
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0x40, 0x1A, 0x80, 0x55),
+                            Color.Transparent
+                        ),
+                        center = Offset(0f, 0f),
+                        radius = 120.dp.toPx()
+                    ),
+                    center = Offset(0f, 0f),
+                    radius = 120.dp.toPx()
+                )
+                // Bottom-right indigo glow
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0x2A, 0x2A, 0x88, 0x77),
+                            Color.Transparent
+                        ),
+                        center = Offset(size.width, size.height),
+                        radius = 120.dp.toPx()
+                    ),
+                    center = Offset(size.width, size.height),
+                    radius = 120.dp.toPx()
+                )
+            }
     ) {
-        // Glowing purple circle in top-left
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = (-80).dp, y = (-80).dp)
-                .size(350.dp)
-                .blur(80.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0x3B, 0x1A, 0x6A, 0x2A), // Soft dark purple
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-        // Glowing indigo circle in bottom-right
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .offset(x = 80.dp, y = 80.dp)
-                .size(350.dp)
-                .blur(80.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0x1F, 0x1F, 0x6E, 0x2A), // Soft dark indigo
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-
         content()
     }
 }
@@ -251,11 +297,9 @@ fun AuthIntroScreen(navController: NavController) {
                 }
 
                 // Dynamic Caption
-                AnimatedContent(
+                Crossfade(
                     targetState = slides[activeSlide],
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
-                    },
+                    animationSpec = tween(300),
                     label = "slide_caption",
                     modifier = Modifier.height(75.dp)
                 ) { slide ->
@@ -386,12 +430,9 @@ fun PhoneFrameShowcase(activeSlide: Int) {
         }
 
         // Screens based on activeSlide with nice Slide animations
-        AnimatedContent(
+        Crossfade(
             targetState = activeSlide,
-            transitionSpec = {
-                (slideInVertically(animationSpec = tween(700, easing = EaseInOutQuad)) { height -> height } + fadeIn(animationSpec = tween(700)))
-                    .togetherWith(slideOutVertically(animationSpec = tween(700, easing = EaseInOutQuad)) { height -> -height } + fadeOut(animationSpec = tween(700)))
-            },
+            animationSpec = tween(700),
             label = "phone_screen"
         ) { slideIndex ->
             when (slideIndex) {
@@ -801,6 +842,7 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val buttonScale = remember { Animatable(1f) }
@@ -903,7 +945,7 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
             // Right/Center Form Card
             Card(
                 modifier = Modifier
-                    .weight(if (isTablet) 1f else 1f)
+                    .run { if (isTablet) weight(1f) else this }
                     .fillMaxWidth()
                     .wrapContentHeight()
                     .align(Alignment.CenterVertically),
@@ -1082,12 +1124,30 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                         val scope = rememberCoroutineScope()
                         Button(
                             onClick = {
+                                if (isLoading) return@Button
                                 if (email.isEmpty() || password.isEmpty()) {
                                     errorMsg = "Email and password are required."
                                 } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                                     errorMsg = "Please enter a valid email address."
                                 } else {
-                                    Toast.makeText(context, "Logged in successfully!", Toast.LENGTH_SHORT).show()
+                                    scope.launch {
+                                        isLoading = true
+                                        errorMsg = null
+                                        try {
+                                            supabase.auth.signInWith(Email) {
+                                                this.email = email
+                                                this.password = password
+                                            }
+                                            Toast.makeText(context, "Logged in successfully!", Toast.LENGTH_SHORT).show()
+                                            navController.navigate("dashboard") {
+                                                popUpTo("intro") { inclusive = true }
+                                            }
+                                        } catch (e: Throwable) {
+                                            errorMsg = friendlyAuthError(e)
+                                        } finally {
+                                            isLoading = false
+                                        }
+                                    }
                                 }
                             },
                             shape = RoundedCornerShape(12.dp),
@@ -1110,12 +1170,20 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    "Log In",
-                                    color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text(
+                                        "Log In",
+                                        color = Color.White,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
 
@@ -1133,7 +1201,9 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.clickable {
-                                    navController.navigate("register")
+                                    navController.navigate("register") {
+                                        popUpTo("intro")
+                                    }
                                 }
                             )
                         }
@@ -1157,6 +1227,8 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     
     var errorMsg by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     GlowBackground {
@@ -1224,7 +1296,7 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
             // Right/Center Form Card
             Card(
                 modifier = Modifier
-                    .weight(if (isTablet) 1f else 1f)
+                    .run { if (isTablet) weight(1f) else this }
                     .fillMaxWidth()
                     .wrapContentHeight()
                     .align(Alignment.CenterVertically),
@@ -1444,9 +1516,9 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // Sign Up Button
-                        Button(
+                            Button(
                             onClick = {
+                                if (isLoading) return@Button
                                 val strength = getPasswordStrength(password)
                                 if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
                                     errorMsg = "All fields are required."
@@ -1459,7 +1531,24 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                                 } else if (strength < 2) {
                                     errorMsg = "Password is too weak. Please use digits or mix cases."
                                 } else {
-                                    Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
+                                    scope.launch {
+                                        isLoading = true
+                                        errorMsg = null
+                                        try {
+                                            supabase.auth.signUpWith(Email) {
+                                                this.email = email
+                                                this.password = password
+                                            }
+                                            Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
+                                            navController.navigate("dashboard") {
+                                                popUpTo("intro") { inclusive = true }
+                                            }
+                                        } catch (e: Throwable) {
+                                            errorMsg = friendlyAuthError(e)
+                                        } finally {
+                                            isLoading = false
+                                        }
+                                    }
                                 }
                             },
                             shape = RoundedCornerShape(12.dp),
@@ -1478,12 +1567,20 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    "Sign Up",
-                                    color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text(
+                                        "Sign Up",
+                                        color = Color.White,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
 
@@ -1501,7 +1598,9 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.clickable {
-                                    navController.navigate("login")
+                                    navController.navigate("login") {
+                                        popUpTo("intro")
+                                    }
                                 }
                             )
                         }
