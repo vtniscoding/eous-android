@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -107,7 +108,7 @@ fun ChatScreenMock() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 22.dp, start = 12.dp, end = 12.dp, bottom = 12.dp)
+            .padding(top = 22.dp, start = 12.dp, end = 12.dp, bottom = 22.dp)
     ) {
         // Fake App Bar
         Row(
@@ -130,23 +131,12 @@ fun ChatScreenMock() {
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
-            Column {
-                Text(
-                    "Eous AI Mentor",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "ACTIVE",
-                    color = EousPurple,
-                    fontSize = 6.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .background(EousPurple.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 4.dp, vertical = 0.5.dp)
-                )
-            }
+            Text(
+                "Eous AI Mentor",
+                color = Color.White.copy(alpha = 0.9f),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -236,7 +226,12 @@ fun ChatScreenMock() {
                         .background(EousIndigo, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("➔", color = Color.White, fontSize = 8.sp)
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Send",
+                        tint = Color.White,
+                        modifier = Modifier.size(8.dp)
+                    )
                 }
             }
         }
