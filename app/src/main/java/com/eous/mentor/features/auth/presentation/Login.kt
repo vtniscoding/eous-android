@@ -1,7 +1,6 @@
 package com.eous.mentor.features.auth.presentation
 
 import android.widget.Toast
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,10 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,23 +33,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.eous.mentor.R
-import com.eous.mentor.core.di.supabase
 import com.eous.mentor.core.theme.*
-import com.eous.mentor.core.util.friendlyAuthError
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
-import kotlinx.coroutines.launch
 
 @Composable
-fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var errorMsg by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
+fun LoginFormScreen(
+    navController: NavController,
+    isTablet: Boolean,
+    viewModel: LoginViewModel = remember { LoginViewModel() }
+) {
+    val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-
-    val buttonScale = remember { Animatable(1f) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -66,87 +56,7 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
         ) {
             // Large Screen Left Intro Banner
             if (isTablet) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 40.dp)
-                        .fillMaxHeight(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .background(EousPurple.copy(alpha = 0.1f), CircleShape)
-                            .border(1.dp, EousPurple.copy(alpha = 0.2f), CircleShape)
-                            .padding(horizontal = 14.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            "🚀 Eous — The #1 AI Study Mentor",
-                            color = EousPurple,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column {
-                            Text(
-                                "Your AI Mentor",
-                                color = Color.White,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = (-1).sp
-                            )
-                            Text(
-                                "Ready for You.",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 40.sp,
-                                    fontWeight = FontWeight.Black,
-                                    letterSpacing = (-1).sp
-                                ),
-                                modifier = Modifier.drawBehind {
-                                    // Custom text gradient shader placeholder using compose brushes
-                                }
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        FloatingMascot(size = 80)
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        "A personal study assistant everyone's obsessed with — works 24/7, no setup needed. Master any subject with step-by-step explanations.",
-                        color = MutedText,
-                        fontSize = 14.sp,
-                        lineHeight = 20.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(EousGreen, CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("No credit card needed", color = MutedText, fontSize = 12.sp)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(EousGreen, CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Cancel anytime", color = MutedText, fontSize = 12.sp)
-                        }
-                    }
-                }
+                LargeScreenIntroBanner(modifier = Modifier.weight(1f))
             }
 
             // Right/Center Form Card
@@ -181,8 +91,7 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                     }
 
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Centered app logo on mobile
@@ -216,7 +125,7 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                         Spacer(modifier = Modifier.height(24.dp))
 
                         // Error message banner
-                        if (errorMsg != null) {
+                        if (state.error != null) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -226,7 +135,7 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                                     .padding(12.dp)
                             ) {
                                 Text(
-                                    text = errorMsg!!,
+                                    text = state.error!!,
                                     color = EousRed,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
@@ -253,11 +162,8 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
 
                         // Email Input
                         OutlinedTextField(
-                            value = email,
-                            onValueChange = {
-                                email = it
-                                errorMsg = null
-                            },
+                            value = state.email,
+                            onValueChange = { viewModel.onEmailChanged(it) },
                             placeholder = { Text("you@example.com", color = MutedText.copy(alpha = 0.5f)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
@@ -296,17 +202,14 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
 
                         // Password Input
                         OutlinedTextField(
-                            value = password,
-                            onValueChange = {
-                                password = it
-                                errorMsg = null
-                            },
+                            value = state.password,
+                            onValueChange = { viewModel.onPasswordChanged(it) },
                             singleLine = true,
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                IconButton(onClick = { viewModel.onTogglePasswordVisibility() }) {
                                     Icon(
-                                        imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        imageVector = if (state.isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                         contentDescription = "Toggle password visibility",
                                         tint = MutedText
                                     )
@@ -328,32 +231,12 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                         Spacer(modifier = Modifier.height(24.dp))
 
                         // Log In Button
-                        val scope = rememberCoroutineScope()
                         Button(
                             onClick = {
-                                if (isLoading) return@Button
-                                if (email.isEmpty() || password.isEmpty()) {
-                                    errorMsg = "Email and password are required."
-                                } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                                    errorMsg = "Please enter a valid email address."
-                                } else {
-                                    scope.launch {
-                                        isLoading = true
-                                        errorMsg = null
-                                        try {
-                                            supabase.auth.signInWith(Email) {
-                                                this.email = email
-                                                this.password = password
-                                            }
-                                            Toast.makeText(context, "Logged in successfully!", Toast.LENGTH_SHORT).show()
-                                            navController.navigate("dashboard") {
-                                                popUpTo("intro") { inclusive = true }
-                                            }
-                                        } catch (e: Throwable) {
-                                            errorMsg = friendlyAuthError(e)
-                                        } finally {
-                                            isLoading = false
-                                        }
+                                viewModel.onLogin {
+                                    Toast.makeText(context, "Logged in successfully!", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("dashboard") {
+                                        popUpTo("intro") { inclusive = true }
                                     }
                                 }
                             },
@@ -363,10 +246,6 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
-                                .graphicsLayer {
-                                    scaleX = buttonScale.value
-                                    scaleY = buttonScale.value
-                                }
                         ) {
                             Box(
                                 modifier = Modifier
@@ -377,7 +256,7 @@ fun LoginFormScreen(navController: NavController, isTablet: Boolean) {
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (isLoading) {
+                                if (state.isLoading) {
                                     CircularProgressIndicator(
                                         color = Color.White,
                                         modifier = Modifier.size(20.dp),

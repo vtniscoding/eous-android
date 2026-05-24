@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -34,25 +33,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.eous.mentor.R
-import com.eous.mentor.core.di.supabase
 import com.eous.mentor.core.theme.*
-import com.eous.mentor.core.util.friendlyAuthError
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
-import kotlinx.coroutines.launch
 
 @Composable
-fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    
-    var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
-    
-    var errorMsg by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+fun RegisterFormScreen(
+    navController: NavController,
+    isTablet: Boolean,
+    viewModel: RegisterViewModel = remember { RegisterViewModel() }
+) {
+    val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -67,54 +56,7 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
         ) {
             // Large Screen Left Intro Banner
             if (isTablet) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 40.dp)
-                        .fillMaxHeight(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Eous",
-                            color = Color.White,
-                            fontSize = 44.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-1).sp
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        FloatingMascot(size = 70)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Your AI Study Mentor", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Master any subject with step-by-step explanations, personalized quizzes, and instant homework help.",
-                        color = MutedText,
-                        fontSize = 14.sp,
-                        lineHeight = 20.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(30.dp))
-
-                    // Features checklist
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        FeatureRow(
-                            title = "AI-Powered Solutions",
-                            desc = "Get instant help with complex equations, diagrams, and text questions."
-                        )
-                        FeatureRow(
-                            title = "Tailored to Your Level",
-                            desc = "Explanations adapt to your education level (Middle School, High School, or University)."
-                        )
-                        FeatureRow(
-                            title = "Progress Tracking",
-                            desc = "Monitor your learning journey with detailed analytics and gamified rewards."
-                        )
-                    }
-                }
+                LargeScreenRegisterIntroBanner(modifier = Modifier.weight(1f))
             }
 
             // Right/Center Form Card
@@ -149,8 +91,7 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                     }
 
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Centered app logo on mobile
@@ -184,7 +125,7 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                         Spacer(modifier = Modifier.height(20.dp))
 
                         // Error message banner
-                        if (errorMsg != null) {
+                        if (state.error != null) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -194,7 +135,7 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                                     .padding(10.dp)
                             ) {
                                 Text(
-                                    text = errorMsg!!,
+                                    text = state.error!!,
                                     color = EousRed,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
@@ -221,11 +162,8 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
 
                         // Email Input
                         OutlinedTextField(
-                            value = email,
-                            onValueChange = {
-                                email = it
-                                errorMsg = null
-                            },
+                            value = state.email,
+                            onValueChange = { viewModel.onEmailChanged(it) },
                             placeholder = { Text("you@example.com", color = MutedText.copy(alpha = 0.5f)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
@@ -259,17 +197,14 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
 
                         // Password Input
                         OutlinedTextField(
-                            value = password,
-                            onValueChange = {
-                                password = it
-                                errorMsg = null
-                            },
+                            value = state.password,
+                            onValueChange = { viewModel.onPasswordChanged(it) },
                             singleLine = true,
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                IconButton(onClick = { viewModel.onTogglePasswordVisibility() }) {
                                     Icon(
-                                        imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        imageVector = if (state.isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                         contentDescription = "Toggle password visibility",
                                         tint = MutedText
                                     )
@@ -289,7 +224,7 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                         )
 
                         // Password Strength Meter (Always Visible)
-                        PasswordStrengthMeter(password = password)
+                        PasswordStrengthMeter(password = state.password)
 
                         Spacer(modifier = Modifier.height(14.dp))
 
@@ -309,17 +244,14 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
 
                         // Confirm Password Input
                         OutlinedTextField(
-                            value = confirmPassword,
-                            onValueChange = {
-                                confirmPassword = it
-                                errorMsg = null
-                            },
+                            value = state.confirmPassword,
+                            onValueChange = { viewModel.onConfirmPasswordChanged(it) },
                             singleLine = true,
-                            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            visualTransformation = if (state.isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
-                                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                IconButton(onClick = { viewModel.onToggleConfirmPasswordVisibility() }) {
                                     Icon(
-                                        imageVector = if (confirmPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        imageVector = if (state.isConfirmPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                         contentDescription = "Toggle password visibility",
                                         tint = MutedText
                                     )
@@ -342,36 +274,10 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
 
                         Button(
                             onClick = {
-                                if (isLoading) return@Button
-                                val strength = getPasswordStrength(password)
-                                if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                                    errorMsg = "All fields are required."
-                                } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                                    errorMsg = "Please enter a valid email address."
-                                } else if (password.length < 8) {
-                                    errorMsg = "Password must be at least 8 characters long."
-                                } else if (password != confirmPassword) {
-                                    errorMsg = "Passwords do not match."
-                                } else if (strength < 2) {
-                                    errorMsg = "Password is too weak. Please use digits or mix cases."
-                                } else {
-                                    scope.launch {
-                                        isLoading = true
-                                        errorMsg = null
-                                        try {
-                                            supabase.auth.signUpWith(Email) {
-                                                this.email = email
-                                                this.password = password
-                                            }
-                                            Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
-                                            navController.navigate("dashboard") {
-                                                popUpTo("intro") { inclusive = true }
-                                            }
-                                        } catch (e: Throwable) {
-                                            errorMsg = friendlyAuthError(e)
-                                        } finally {
-                                            isLoading = false
-                                        }
+                                viewModel.onRegister {
+                                    Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("dashboard") {
+                                        popUpTo("intro") { inclusive = true }
                                     }
                                 }
                             },
@@ -391,7 +297,7 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (isLoading) {
+                                if (state.isLoading) {
                                     CircularProgressIndicator(
                                         color = Color.White,
                                         modifier = Modifier.size(20.dp),
@@ -430,122 +336,6 @@ fun RegisterFormScreen(navController: NavController, isTablet: Boolean) {
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun FeatureRow(title: String, desc: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Top
-    ) {
-        Icon(
-            imageVector = Icons.Default.CheckCircle,
-            contentDescription = "Check",
-            tint = EousGreen,
-            modifier = Modifier
-                .size(20.dp)
-                .padding(top = 2.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Column {
-            Text(
-                text = title,
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = desc,
-                color = MutedText,
-                fontSize = 12.sp,
-                lineHeight = 16.sp
-            )
-        }
-    }
-}
-
-fun getPasswordStrength(password: String): Int {
-    if (password.isEmpty()) return -1
-    if (password.length < 8) return 0 // Very Weak
-    
-    var score = 1 // Weak
-    val hasDigit = password.any { it.isDigit() }
-    val hasUpper = password.any { it.isUpperCase() }
-    val hasLower = password.any { it.isLowerCase() }
-    val hasSpecial = password.any { !it.isLetterOrDigit() }
-    
-    if (hasDigit && (hasUpper || hasLower)) {
-        score = 2 // Fair
-    }
-    if (hasDigit && hasUpper && hasLower) {
-        score = 3 // Good
-    }
-    if (hasDigit && hasUpper && hasLower && hasSpecial && password.length >= 10) {
-        score = 4 // Strong
-    }
-    return score
-}
-
-@Composable
-fun PasswordStrengthMeter(password: String) {
-    val score = remember(password) { getPasswordStrength(password) }
-    
-    val scoreText = when (score) {
-        0 -> "Very Weak"
-        1 -> "Weak"
-        2 -> "Fair"
-        3 -> "Good"
-        4 -> "Strong"
-        else -> "Enter password"
-    }
-    
-    val scoreColor = when (score) {
-        0, 1 -> EousRed
-        2 -> EousOrange
-        3 -> EousYellow
-        4 -> EousGreen
-        else -> Color.Gray.copy(alpha = 0.2f)
-    }
-    
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Password Strength",
-                color = MutedText,
-                fontSize = 12.sp
-            )
-            Text(
-                scoreText,
-                color = scoreColor,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(6.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            for (i in 0..3) {
-                val active = score >= 0 && i <= score
-                val color = if (active) scoreColor else Color.Gray.copy(alpha = 0.2f)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(6.dp)
-                        .clip(CircleShape)
-                        .background(color)
-                )
             }
         }
     }
