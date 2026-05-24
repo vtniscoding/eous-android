@@ -7,17 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
-
-val supabase = createSupabaseClient(
-    supabaseUrl = BuildConfig.SUPABASE_URL,
-    supabaseKey = BuildConfig.SUPABASE_KEY
-) {
-    install(Postgrest)
-    install(Auth)
-}
+import com.eous.mentor.core.di.supabase
+import com.eous.mentor.features.auth.presentation.AuthRouter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +19,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    EousAppNavHost()
+                    AuthRouter()
                 }
             }
         }

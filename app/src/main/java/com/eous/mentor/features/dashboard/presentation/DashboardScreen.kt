@@ -1,4 +1,4 @@
-package com.eous.mentor
+package com.eous.mentor.features.dashboard.presentation
 
 import android.widget.Toast
 import androidx.compose.animation.*
@@ -20,67 +20,19 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
-import com.eous.mentor.ui.theme.*
+import com.eous.mentor.core.di.supabase
+import com.eous.mentor.core.theme.*
+import com.eous.mentor.data.model.*
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class DashboardStats(
-    val displayName: String,
-    val totalQueries: Int,
-    val libraryItems: Int,
-    val streak: Int,
-    val studyTime: String,
-    val level: Int,
-    val xp: Int,
-    val mathPct: Int,
-    val itPct: Int,
-    val sciencePct: Int,
-    val quizzes: List<Quiz> = emptyList()
-)
-
-@Serializable
-data class Profile(
-    val id: String,
-    val email: String? = null,
-    val display_name: String? = null,
-    val onboarding_completed: Boolean = false
-)
-
-@Serializable
-data class Message(
-    val id: String? = null,
-    val role: String,
-    val subject: String? = null,
-    val created_at: String? = null
-)
-
-@Serializable
-data class Bookmark(
-    val id: String? = null,
-    val folder: String? = null
-)
-
-@Serializable
-data class Quiz(
-    val id: String,
-    val topic: String,
-    val score: Int,
-    val total_questions: Int,
-    val created_at: String
-)
 
 @Composable
 fun DashboardScreen(navController: NavController, userId: String) {
