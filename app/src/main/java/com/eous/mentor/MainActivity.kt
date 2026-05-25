@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.eous.mentor.core.di.supabase
-import com.eous.mentor.features.auth.presentation.AuthRouter
+import com.eous.mentor.di.supabase
+import com.eous.mentor.core.navigation.AuthRouter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
