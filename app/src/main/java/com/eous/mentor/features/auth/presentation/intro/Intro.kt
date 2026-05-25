@@ -37,7 +37,7 @@ fun AuthIntroScreen(
     navController: NavController,
     viewModel: IntroViewModel = remember { IntroViewModel() }
 ) {
-    val state by viewModel.state.collectAsState()
+    val state = viewModel.state.value
 
     val signUpInteractionSource = remember { MutableInteractionSource() }
     val isSignUpPressed by signUpInteractionSource.collectIsPressedAsState()

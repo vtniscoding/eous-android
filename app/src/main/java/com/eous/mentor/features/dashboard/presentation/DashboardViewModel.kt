@@ -7,6 +7,8 @@ import com.eous.mentor.data.model.*
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,8 +34,33 @@ class DashboardViewModel(private val userId: String) : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
+                // 1. Fetch profile first to get the name immediately
+                val profile = withContext(Dispatchers.IO) {
+                    try {
+                        supabase.from("profiles")
+                            .select {
+                                filter {
+                                    eq("id", userId)
+                                }
+                            }
+                            .decodeSingleOrNull<Profile>()
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                var currentDisplayName = "Student"
+                if (profile != null) {
+                    val displayEmail = profile.email ?: "Student"
+                    currentDisplayName = profile.display_name ?: displayEmail.substringBefore("@")
+                    _state.update {
+                        it.copy(stats = it.stats.copy(displayName = currentDisplayName))
+                    }
+                }
+
+                // 2. Fetch messages, bookmarks, and quizzes in parallel
                 val fetchedStats = withContext(Dispatchers.IO) {
-                    fetchDashboardStatsFromSupabase(userId)
+                    fetchStatsParallel(userId, currentDisplayName)
                 }
                 _state.update { it.copy(stats = fetchedStats, isLoading = false) }
             } catch (e: Exception) {
@@ -56,50 +83,45 @@ class DashboardViewModel(private val userId: String) : ViewModel() {
         }
     }
 
-    private suspend fun fetchDashboardStatsFromSupabase(userId: String): DashboardStats {
-        // 1. Fetch profile name
-        val profile = try {
-            supabase.from("profiles")
-                .select {
-                    filter {
-                        eq("id", userId)
+    private suspend fun fetchStatsParallel(userId: String, displayName: String): DashboardStats = coroutineScope {
+        // Fetch queries (messages), bookmarks, and quizzes concurrently
+        val messagesDeferred = async {
+            try {
+                supabase.from("messages")
+                    .select {
+                        filter {
+                            eq("role", "user")
+                        }
                     }
-                }
-                .decodeSingleOrNull<Profile>()
-        } catch (e: Exception) {
-            null
+                    .decodeList<Message>()
+            } catch (e: Exception) {
+                emptyList()
+            }
         }
 
-        // 2. Fetch queries count and subject focus
-        val messages = try {
-            supabase.from("messages")
-                .select {
-                    filter {
-                        eq("role", "user")
-                    }
-                }
-                .decodeList<Message>()
-        } catch (e: Exception) {
-            emptyList()
+        val bookmarksDeferred = async {
+            try {
+                supabase.from("bookmarks")
+                    .select()
+                    .decodeList<Bookmark>()
+            } catch (e: Exception) {
+                emptyList()
+            }
         }
 
-        // 3. Fetch bookmarks count
-        val bookmarks = try {
-            supabase.from("bookmarks")
-                .select()
-                .decodeList<Bookmark>()
-        } catch (e: Exception) {
-            emptyList()
+        val quizzesDeferred = async {
+            try {
+                supabase.from("quizzes")
+                    .select()
+                    .decodeList<Quiz>()
+            } catch (e: Exception) {
+                emptyList()
+            }
         }
 
-        // 4. Fetch recent quizzes
-        val quizzes = try {
-            supabase.from("quizzes")
-                .select()
-                .decodeList<Quiz>()
-        } catch (e: Exception) {
-            emptyList()
-        }
+        val messages = messagesDeferred.await()
+        val bookmarks = bookmarksDeferred.await()
+        val quizzes = quizzesDeferred.await()
 
         // Process stats
         val totalQueries = messages.size
@@ -138,10 +160,8 @@ class DashboardViewModel(private val userId: String) : ViewModel() {
         val xp = totalXp % 100
 
         val totalSubjects = mathCount + itCount + scienceCount
-        val displayEmail = profile?.email ?: "Student"
-        val displayName = profile?.display_name ?: displayEmail.substringBefore("@")
 
-        return DashboardStats(
+        DashboardStats(
             displayName = displayName,
             totalQueries = totalQueries,
             libraryItems = libraryItems,

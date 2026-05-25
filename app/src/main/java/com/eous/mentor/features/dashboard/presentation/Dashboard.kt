@@ -170,7 +170,7 @@ fun Dashboard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Welcome Back,\n${state.stats.displayName}! 👋",
+                            text = "Welcome back,\n${state.stats.displayName}! 👋",
                             color = Color.White,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.ExtraBold,
