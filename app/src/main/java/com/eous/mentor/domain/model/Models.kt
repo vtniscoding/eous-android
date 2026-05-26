@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TodoItem(val id: Int, val name: String)
 
-@Serializable
 data class DashboardStats(
     val displayName: String,
     val totalQueries: Int,

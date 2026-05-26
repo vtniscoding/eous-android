@@ -2,7 +2,10 @@ package com.eous.mentor.features.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eous.mentor.di.RepositoryProvider
 import com.eous.mentor.domain.model.Message
+import com.eous.mentor.domain.usecase.chat.GetMessagesUseCase
+import com.eous.mentor.domain.usecase.chat.SendMessageUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,7 +13,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ChatViewModel(initialQuestion: String = "") : ViewModel() {
+class ChatViewModel(
+    initialQuestion: String = "",
+    private val sendMessageUseCase: SendMessageUseCase = SendMessageUseCase(RepositoryProvider.chatRepository),
+    private val getMessagesUseCase: GetMessagesUseCase = GetMessagesUseCase(RepositoryProvider.chatRepository)
+) : ViewModel() {
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
 
@@ -42,6 +49,9 @@ class ChatViewModel(initialQuestion: String = "") : ViewModel() {
         }
 
         viewModelScope.launch {
+            // Call UseCase (which routes to repository)
+            sendMessageUseCase(currentInput)
+            
             delay(1500)
             _state.update { state ->
                 val finalMessages = state.messages.toMutableList()

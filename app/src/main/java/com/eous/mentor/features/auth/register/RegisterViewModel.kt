@@ -2,17 +2,18 @@ package com.eous.mentor.features.auth.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.eous.mentor.di.supabase
 import com.eous.mentor.core.util.friendlyAuthError
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
+import com.eous.mentor.di.RepositoryProvider
+import com.eous.mentor.domain.usecase.auth.RegisterUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RegisterViewModel : ViewModel() {
+class RegisterViewModel(
+    private val registerUseCase: RegisterUseCase = RegisterUseCase(RepositoryProvider.authRepository)
+) : ViewModel() {
     private val _state = MutableStateFlow(RegisterState())
     val state: StateFlow<RegisterState> = _state.asStateFlow()
 
@@ -63,17 +64,14 @@ class RegisterViewModel : ViewModel() {
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            try {
-                supabase.auth.signUpWith(Email) {
-                    this.email = currentState.email
-                    this.password = currentState.password
+            registerUseCase(currentState.email, currentState.password)
+                .onSuccess {
+                    onSuccess()
                 }
-                onSuccess()
-            } catch (e: Throwable) {
-                _state.update { it.copy(error = friendlyAuthError(e)) }
-            } finally {
-                _state.update { it.copy(isLoading = false) }
-            }
+                .onFailure { e ->
+                    _state.update { it.copy(error = friendlyAuthError(e)) }
+                }
+            _state.update { it.copy(isLoading = false) }
         }
     }
 }

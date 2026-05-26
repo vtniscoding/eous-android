@@ -27,7 +27,9 @@ import androidx.navigation.NavController
 import com.eous.mentor.R
 import com.eous.mentor.core.ui.theme.*
 import com.eous.mentor.features.chat.Chat
+import com.eous.mentor.features.chat.ChatViewModel
 import com.eous.mentor.features.dashboard.Dashboard
+import com.eous.mentor.features.dashboard.DashboardViewModel
 import com.eous.mentor.features.pro.Pro
 import com.eous.mentor.features.search.Search
 import com.eous.mentor.features.tools.Tools
@@ -37,10 +39,13 @@ import com.eous.mentor.features.userlibrary.Library
 fun Sidebar(
     navController: NavController,
     userId: String,
-    viewModel: SidebarViewModel = remember { SidebarViewModel() }
+    viewModel: SidebarViewModel = remember { SidebarViewModel() },
+    dashboardViewModel: DashboardViewModel = remember(userId) { DashboardViewModel(userId) }
 ) {
     val state by viewModel.state.collectAsState()
     val sidebarWidth = 280.dp
+
+    val chatViewModel = remember(state.chatInitialQuestion) { ChatViewModel(state.chatInitialQuestion) }
 
     // System back button handling
     if (state.isSidebarOpen) {
@@ -88,14 +93,16 @@ fun Sidebar(
                     Dashboard(
                         navController = navController,
                         userId = userId,
-                        onMenuClick = { viewModel.setSidebarOpen(true) }
+                        onMenuClick = { viewModel.setSidebarOpen(true) },
+                        viewModel = dashboardViewModel
                     )
                 }
                 "chat" -> {
                     Chat(
                         userId = userId,
                         onMenuClick = { viewModel.setSidebarOpen(true) },
-                        initialQuestion = state.chatInitialQuestion
+                        initialQuestion = state.chatInitialQuestion,
+                        viewModel = chatViewModel
                     )
                 }
                 "tools" -> {

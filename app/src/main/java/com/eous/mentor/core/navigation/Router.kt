@@ -20,18 +20,19 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.eous.mentor.R
 import com.eous.mentor.core.ui.theme.*
-import com.eous.mentor.di.supabase
+import com.eous.mentor.di.RepositoryProvider
+import com.eous.mentor.domain.repository.SessionState
 import com.eous.mentor.features.sidebar.Sidebar
 import com.eous.mentor.features.auth.login.LoginFormScreen
 import com.eous.mentor.features.auth.register.RegisterFormScreen
 import com.eous.mentor.features.auth.intro.AuthIntroScreen
-import io.github.jan.supabase.auth.status.SessionStatus
-import io.github.jan.supabase.auth.auth
+import com.eous.mentor.features.dashboard.DashboardViewModel
 import androidx.compose.material3.CircularProgressIndicator
 
 // --- Navigation Host ---
 @Composable
 fun AuthRouter() {
+    val sessionRepository = RepositoryProvider.sessionRepository
     val navController = rememberNavController()
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
@@ -39,17 +40,31 @@ fun AuthRouter() {
 
     var isInitialized by remember { mutableStateOf(false) }
     var startDest by remember { mutableStateOf("intro") }
+    var activeUserId by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        supabase.auth.sessionStatus.collect { status ->
-            if (status !is SessionStatus.Initializing) {
-                startDest = if (status is SessionStatus.Authenticated) "dashboard" else if (isTablet) "login" else "intro"
+        sessionRepository.observeSessionStatus().collect { status ->
+            if (status != SessionState.INITIALIZING) {
+                val currentUid = sessionRepository.getCurrentUserId() ?: ""
+                activeUserId = currentUid
+                startDest = if (status == SessionState.AUTHENTICATED) "dashboard" else if (isTablet) "login" else "intro"
                 isInitialized = true
             }
         }
     }
 
-    if (!isInitialized) {
+    val dashboardViewModel = remember(activeUserId) {
+        if (activeUserId.isNotEmpty()) DashboardViewModel(activeUserId) else null
+    }
+
+    val dashboardState = dashboardViewModel?.state?.collectAsState()?.value
+    val isAppReady = if (startDest == "dashboard") {
+        isInitialized && dashboardState != null && !dashboardState.isLoading
+    } else {
+        isInitialized
+    }
+
+    if (!isAppReady) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -99,14 +114,11 @@ fun AuthRouter() {
                 RegisterFormScreen(navController = navController, isTablet = isTablet)
             }
             composable("dashboard") {
-                val user = remember {
-                    try {
-                        supabase.auth.currentSessionOrNull()?.user
-                    } catch (e: Throwable) {
-                        null
-                    }
-                }
-                Sidebar(navController, user?.id ?: "")
+                Sidebar(
+                    navController = navController,
+                    userId = activeUserId,
+                    dashboardViewModel = dashboardViewModel!!
+                )
             }
         }
     }
