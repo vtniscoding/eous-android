@@ -58,16 +58,6 @@ fun Search(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    IconButton(
-                        onClick = onMenuClick,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = "Open Sidebar",
-                            tint = Color.White
-                        )
-                    }
                     Text(
                         text = "Search",
                         color = Color.White,
@@ -76,25 +66,6 @@ fun Search(
                     )
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(15.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(Brush.linearGradient(listOf(EousPurple, EousIndigo)), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("S", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
             }
 
             Column(

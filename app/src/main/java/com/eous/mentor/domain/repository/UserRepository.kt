@@ -8,4 +8,5 @@ interface UserRepository {
     suspend fun getProfile(userId: String): Result<Profile?>
     suspend fun getBookmarks(userId: String): Result<List<Bookmark>>
     suspend fun getQuizzes(userId: String): Result<List<Quiz>>
+    suspend fun updateSubjects(userId: String, subjects: List<String>): Result<Unit>
 }

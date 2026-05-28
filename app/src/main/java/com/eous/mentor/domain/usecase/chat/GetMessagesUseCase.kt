@@ -5,5 +5,5 @@ import com.eous.mentor.domain.repository.ChatRepository
 
 class GetMessagesUseCase(private val repository: ChatRepository) {
     suspend operator fun invoke(): Result<List<Message>> =
-        repository.getMessages()
+        repository.getLegacyMessages()
 }

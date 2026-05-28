@@ -126,7 +126,7 @@ fun ChatScreenMock() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_app_logo),
+                painter = painterResource(id = R.drawable.ic_eous),
                 contentDescription = "Logo",
                 modifier = Modifier.size(20.dp)
             )
@@ -261,7 +261,7 @@ fun DashboardScreenMock() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_app_logo),
+                painter = painterResource(id = R.drawable.ic_eous),
                 contentDescription = "Logo",
                 modifier = Modifier.size(20.dp)
             )
@@ -378,7 +378,7 @@ fun QuizScreenMock() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_app_logo),
+                painter = painterResource(id = R.drawable.ic_eous),
                 contentDescription = "Logo",
                 modifier = Modifier.size(20.dp)
             )

@@ -97,7 +97,7 @@ fun RegisterFormScreen(
                         // Centered app logo on mobile
                         if (!isTablet) {
                             Image(
-                                painter = painterResource(id = R.drawable.ic_app_logo),
+                                painter = painterResource(id = R.drawable.ic_eous),
                                 contentDescription = "Eous Logo",
                                 modifier = Modifier
                                     .size(44.dp)

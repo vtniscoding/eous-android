@@ -108,25 +108,14 @@ fun AuthIntroScreen(
                     .fillMaxWidth()
                     .padding(bottom = 20.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    Text(
-                        text = "Eous",
-                        color = Color.White,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_app_logo),
-                        contentDescription = "Eous logo",
-                        modifier = Modifier.size(44.dp)
-                    )
-                }
+                Image(
+                    painter = painterResource(id = R.drawable.ic_logo),
+                    contentDescription = "EOUS Logo",
+                    modifier = Modifier
+                        .height(44.dp)
+                        .width(157.dp)
+                        .padding(bottom = 8.dp)
+                )
 
                 // Dynamic Caption
                 if (state.slides.isNotEmpty()) {

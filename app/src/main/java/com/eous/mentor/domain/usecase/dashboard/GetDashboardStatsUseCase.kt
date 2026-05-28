@@ -26,7 +26,7 @@ class GetDashboardStatsUseCase(
 
         // 2. Fetch remaining data in parallel
         coroutineScope {
-            val messagesDeferred = async { chatRepository.getMessages().getOrDefault(emptyList()) }
+            val messagesDeferred = async { chatRepository.getLegacyMessages().getOrDefault(emptyList()) }
             val bookmarksDeferred = async { userRepository.getBookmarks(userId).getOrDefault(emptyList()) }
             val quizzesDeferred = async { userRepository.getQuizzes(userId).getOrDefault(emptyList()) }
 
